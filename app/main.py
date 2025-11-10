@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .database import engine, Base
+from .services.database import engine, Base
 from .routes import router
 import os
 from dotenv import load_dotenv
