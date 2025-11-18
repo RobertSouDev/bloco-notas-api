@@ -1,79 +1,43 @@
 from sqlalchemy.orm import Session
 from . import models, schemas
-from .services.cache import get_redis
-import json
 
-redis_client = get_redis()
-
-def criar_nota(db: Session, nota: schemas.NotaCreate):
-    db_nota = models.Nota(**nota.model_dump())
-    db.add(db_nota)
+def criar_todo(db: Session, todo: schemas.TodoCreate):
+    db_todo = models.Todo(**todo.model_dump())
+    db.add(db_todo)
     db.commit()
-    db.refresh(db_nota)
-    
-    
-    redis_client.delete("notas:todas")
-    
-    return db_nota
+    db.refresh(db_todo)
+    return db_todo
 
-def listar_notas(db: Session, skip: int = 0, limit: int = 100):
+def listar_todos(db: Session, skip: int = 0, limit: int = 100, concluido: bool = None):
+    query = db.query(models.Todo)
     
-    cache_key = "notas:todas"
-    cached = redis_client.get(cache_key)
+    if concluido is not None:
+        query = query.filter(models.Todo.concluido == concluido)
     
-    if cached:
-        return json.loads(cached)
-    
-    notas = db.query(models.Nota).offset(skip).limit(limit).all()
-    
-    notas_dict = [{"id": nota.id, "titulo": nota.titulo, "conteudo": nota.conteudo, 
-                   "data_criacao": nota.data_criacao.isoformat()} for nota in notas]
-    redis_client.setex(cache_key, 300, json.dumps(notas_dict))
-    
-    return notas
+    todos = query.offset(skip).limit(limit).all()
+    return todos
 
-def obter_nota_por_id(db: Session, nota_id: int):
-    cache_key = f"nota:{nota_id}"
-    cached = redis_client.get(cache_key)
-    
-    if cached:
-        return json.loads(cached)
-    
-    nota = db.query(models.Nota).filter(models.Nota.id == nota_id).first()
-    
-    if nota:
-        nota_dict = {"id": nota.id, "titulo": nota.titulo, "conteudo": nota.conteudo,
-                     "data_criacao": nota.data_criacao.isoformat()}
-        redis_client.setex(cache_key, 300, json.dumps(nota_dict))
-    
-    return nota
+def obter_todo_por_id(db: Session, todo_id: int):
+    return db.query(models.Todo).filter(models.Todo.id == todo_id).first()
 
-
-def atualizar_nota(db: Session, nota_id: int, nota_update: schemas.NotaCreate):
-    db_nota = db.query(models.Nota).filter(models.Nota.id == nota_id).first()
+def atualizar_todo(db: Session, todo_id: int, todo_update: schemas.TodoUpdate):
+    db_todo = db.query(models.Todo).filter(models.Todo.id == todo_id).first()
     
-    if db_nota:
-        db_nota.titulo = nota_update.titulo
-        db_nota.conteudo = nota_update.conteudo
+    if db_todo:
+        update_data = todo_update.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(db_todo, field, value)
         
         db.commit()
-        db.refresh(db_nota)
-        
-        redis_client.delete("notas:todas")
-        redis_client.delete(f"nota:{nota_id}")
-        
-        return db_nota
+        db.refresh(db_todo)
+        return db_todo
     return None
 
-def deletar_nota(db: Session, nota_id: int):
-    db_nota = db.query(models.Nota).filter(models.Nota.id == nota_id).first()
+def deletar_todo(db: Session, todo_id: int):
+    db_todo = db.query(models.Todo).filter(models.Todo.id == todo_id).first()
     
-    if db_nota:
-        db.delete(db_nota)
+    if db_todo:
+        db.delete(db_todo)
         db.commit()
-        
-        redis_client.delete("notas:todas")
-        redis_client.delete(f"nota:{nota_id}")
-        
         return True
     return False

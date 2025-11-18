@@ -2,28 +2,38 @@ version: "3.8"
 services:
   postgres:
     image: postgres:16
-    container_name: postgres-notes
+    container_name: postgres-todolist
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: notepad
+      POSTGRES_DB: todolist
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
-      - notepad-net
+      - todolist-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  redis:
-    image: redis:7
-    container_name: redis-notes
+  api:
+    build: .
+    container_name: todolist-api
     ports:
-      - "6379:6379"
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://user:password@postgres:5432/todolist
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
-      - notepad-net
+      - todolist-net
 
 volumes:
   pgdata:
 
 networks:
-  notepad-net:
+  todolist-net:

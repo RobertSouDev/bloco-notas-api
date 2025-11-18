@@ -1,11 +1,11 @@
 [project]
-name = "bloco-notas-api"
+name = "todolist-api"
 version = "0.1.0"
-description = "Default template for PDM package"
+description = "API de Todolist com FastAPI, PostgreSQL e SQLAlchemy"
 authors = [
     {name = "", email = ""},
 ]
-dependencies = ["fastapi>=0.121.0", "uvicorn>=0.38.0", "sqlalchemy>=2.0.44", "psycopg2-binary>=2.9.11", "redis>=7.0.1", "python-dotenv>=1.2.1", "pydantic>=2.12.3"]
+dependencies = ["fastapi>=0.121.0", "uvicorn>=0.38.0", "sqlalchemy>=2.0.44", "psycopg2-binary>=2.9.11", "python-dotenv>=1.2.1", "pydantic>=2.12.3"]
 requires-python = "==3.12.*"
 readme = "README.md"
 license = {text = "MIT"}
